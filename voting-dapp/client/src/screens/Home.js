@@ -31,7 +31,7 @@ export default function Home() {
       );
   
       // 🔥 Manually set the voter address here
-      const voterAddress = "0x5560022eDa4fB4E3fE4dC0F9e6Fd59866294331E";
+      const voterAddress = "0xbB95AB546389579A805730d3cA37C4Fe4479AceE";
   
       setWeb3(web3);
       setCurrentAccount(voterAddress); // Set voter manually
