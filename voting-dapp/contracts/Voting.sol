@@ -116,4 +116,12 @@ contract Election {
             candidates[_candidateId].voteCount
         );
     }
+    function getElectionState() public view returns (State) {
+    return electionState;
+}
+
+function getCandidatesCount() public view returns (uint256) {
+    return candidatesCount;
+}
+
 }

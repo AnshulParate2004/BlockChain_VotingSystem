@@ -18,26 +18,45 @@ export default function Home() {
       const accounts = await web3.eth.getAccounts();
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = ElectionContract.networks[networkId];
+  
+      if (!deployedNetwork) {
+        console.error("No deployed network found for network ID:", networkId);
+        setLoading(false);
+        return;
+      }
+  
       const instance = new web3.eth.Contract(
         ElectionContract.abi,
-        deployedNetwork && deployedNetwork.address
+        deployedNetwork.address
       );
+  
+      // 🔥 Manually set the voter address here
+      const voterAddress = "0x5560022eDa4fB4E3fE4dC0F9e6Fd59866294331E";
+  
       setWeb3(web3);
-      setCurrentAccount(accounts[0]);
+      setCurrentAccount(voterAddress); // Set voter manually
       setContract(instance);
-      console.log("init");
       setLoading(false);
+  
+      console.log("init");
+      console.log("Network ID:", networkId);
+      console.log("Deployed Network:", deployedNetwork);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error loading web3 or contract:", error);
+      setLoading(false);
     }
   };
+  
 
   const getRole = async () => {
-    if (contract) {
-      const user = await contract.methods.getRole(currentAccount).call();
-      setRole(parseInt(user));
-      console.log("role:");
-      setLoading(false);
+    if (contract && currentAccount) {
+      try {
+        const user = await contract.methods.getRole(currentAccount).call();
+        setRole(parseInt(user));
+        console.log("role:", user);
+      } catch (error) {
+        console.error("Error getting role:", error);
+      }
     }
   };
 
@@ -47,7 +66,7 @@ export default function Home() {
 
   useEffect(() => {
     getRole();
-  }, [contract]);
+  }, [contract, currentAccount]);
 
   return (
     <Box

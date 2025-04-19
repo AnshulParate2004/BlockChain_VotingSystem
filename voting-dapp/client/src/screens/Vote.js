@@ -13,48 +13,47 @@ import FormControl from "@mui/material/FormControl";
 import Candidate from "../components/CandidateCard";
 
 export default function Vote({ role, contract, web3, currentAccount }) {
-  // const [loading, setLoading] = useState(true);
   const [candidates, setCandidates] = useState([]);
   const [vote, setVote] = useState(null);
   const [electionState, setElectionState] = useState(0);
 
-  const [open, setOpen] = useState(false);
-
   const getCandidates = async () => {
-    if (contract) {
-      const count = await contract.methods.candidatesCount().call();
-      const temp = [];
-      for (let i = 0; i < count; i++) {
-        const candidate = await contract.methods.getCandidateDetails(i).call();
-        temp.push({ name: candidate[0], votes: candidate[1] });
-      }
-      setCandidates(temp);
-      // setLoading(false);
-    }
-  };
-
-  const voteCandidate = async (candidate) => {
     try {
       if (contract) {
-        await contract.methods.vote(candidate).send({ from: currentAccount });
-        getCandidates();
+        const count = await contract.methods.getCandidatesCount().call();
+        const temp = [];
+        for (let i = 0; i < count; i++) {
+          const candidate = await contract.methods.getCandidateDetails(i).call();
+          temp.push({ name: candidate[0], votes: candidate[1] });
+        }
+        setCandidates(temp);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error fetching candidates:", error);
     }
   };
 
   const getElectionState = async () => {
-    if (contract) {
-      const state = await contract.methods.electionState().call();
-      setElectionState(parseInt(state));
+    try {
+      if (contract) {
+        const state = await contract.methods.getElectionState().call();
+        setElectionState(parseInt(state));
+      }
+    } catch (error) {
+      console.error("Error fetching election state:", error);
     }
   };
 
-  useEffect(() => {
-    getElectionState();
-    getCandidates();
-  }, [contract]);
+  const voteCandidate = async (candidateId) => {
+    try {
+      if (contract) {
+        await contract.methods.vote(candidateId).send({ from: currentAccount });
+        getCandidates(); // Refresh vote counts
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
+    }
+  };
 
   const handleVoteChange = (event) => {
     setVote(event.target.value);
@@ -65,20 +64,26 @@ export default function Vote({ role, contract, web3, currentAccount }) {
     voteCandidate(vote);
   };
 
+  useEffect(() => {
+    if (contract) {
+      getElectionState();
+      getCandidates();
+    }
+  }, [contract]);
+
   return (
     <Box>
       <form onSubmit={handleVote}>
         <Grid container sx={{ mt: 0 }} spacing={6} justifyContent="center">
           <Grid item xs={12}>
             <Typography align="center" variant="h6">
-              {electionState === 0 &&
-                "Please Wait... Election has not started yet."}
+              {electionState === 0 && "Please Wait... Election has not started yet."}
               {electionState === 1 && "VOTE FOR YOUR FAVOURITE CANDIDATE"}
-              {electionState === 2 &&
-                "Election has ended. See the results below."}
+              {electionState === 2 && "Election has ended. See the results below."}
             </Typography>
             <Divider />
           </Grid>
+
           {electionState === 1 && (
             <>
               <Grid item xs={12}>
@@ -109,11 +114,7 @@ export default function Vote({ role, contract, web3, currentAccount }) {
               </Grid>
               <Grid item xs={6}>
                 <div style={{ margin: 20 }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    sx={{ width: "100%" }}
-                  >
+                  <Button type="submit" variant="contained" sx={{ width: "100%" }}>
                     Vote
                   </Button>
                 </div>
@@ -133,16 +134,11 @@ export default function Vote({ role, contract, web3, currentAccount }) {
                 justifyContent: "center",
               }}
             >
-              {candidates &&
-                candidates.map((candidate, index) => (
-                  <Box sx={{ mx: 2 }} key={index}>
-                    <Candidate
-                      id={index}
-                      name={candidate.name}
-                      voteCount={candidate.votes}
-                    />
-                  </Box>
-                ))}
+              {candidates.map((candidate, index) => (
+                <Box sx={{ mx: 2 }} key={index}>
+                  <Candidate id={index} name={candidate.name} voteCount={candidate.votes} />
+                </Box>
+              ))}
             </Grid>
           )}
         </Grid>
